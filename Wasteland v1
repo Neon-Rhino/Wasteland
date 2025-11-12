@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wasteland Survivor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Special+Elite&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Wasteland%20Survivor%22,%22short_name%22:%22Wasteland%22,%22start_url%22:%22?%22,%22display%22:%22standalone%22,%22background_color%22:%22#0d0221%22,%22theme_color%22:%22#c026d3%22,%22icons%22:[{%22src%22:%22data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzBkMDIyMSIvPjxwYXRoIGQ9Ik0zMCA3MEw1MCAzMEw3MCA3MFoiIHN0cm9rZT0iI2MwMjZkMyIgc3Ryb2tlLXdpZHRoPSI4IiBmaWxsPSJub25lIiAvPjwvc3ZnPg==%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <meta name="theme-color" content="#c026d3">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            color: #c5c5c5;
+            background-color: #0d0221; /* Solid base for parallax */
+        }
+
+        @keyframes neon-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .font-title {
+            font-family: 'Special Elite', cursive;
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .game-container {
+            border: 2px solid #581c87;
+            background-color: rgba(26, 26, 26, 0.9);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 0 20px rgba(217, 70, 239, 0.4);
+            transition: box-shadow 0.4s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #555;
+            cursor: pointer;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-action {
+            background-color: #334155;
+            color: #e2e8f0;
+        }
+        .btn-action:hover:not(:disabled) {
+            background-color: #475569;
+        }
+        .btn-travel {
+            background-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .btn-travel:hover:not(:disabled) {
+            background-color: #64748b;
+        }
+        .btn-danger {
+            background-color: #c026d3;
+            color: #ffffff;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background-color: #a21caf;
+        }
+        .log-message {
+            border-left: 2px solid #666;
+            padding-left: 10px;
+            margin-bottom: 8px;
+            animation: fadeIn 0.5s ease-in-out;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: 1.4;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+        .log-message.old {
+            opacity: 0.4;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.85);
+        }
+        .health-bar, .energy-bar, .hunger-bar, .thirst-bar, .rads-bar {
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #374151;
+        }
+        
+        .health-fill { background-color: #f472b6; }
+        .energy-fill { background-color: #8b5cf6; }
+        .hunger-fill { background-color: #a3e635; }
+        .thirst-fill { background-color: #22d3ee; }
+        .rads-fill { background-color: #a3e635; }
+
+        .stat-warning {
+            border-radius: 4px;
+            animation: pulse-warning 1.5s infinite;
+        }
+        @keyframes pulse-warning {
+            0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+        }
+
+        .rads-warning {
+            border-radius: 4px;
+            animation: pulse-rad-warning 1.5s infinite;
+        }
+        @keyframes pulse-rad-warning {
+            0% { box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(163, 230, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(163, 230, 53, 0); }
+        }
+
+        .damage-flash {
+            animation: red-flash 0.4s ease-out;
+        }
+        @keyframes red-flash {
+            0% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.4), inset 0 0 60px 30px rgba(236, 72, 153, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(217, 70, 239, 0.4), inset 0 0 0 0 rgba(236, 72, 153, 0); }
+        }
+
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%; left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            background: #1a1a1a;
+            color: #e2e8f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        [data-tooltip]:hover::after {
+            opacity: 1;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* === SIMPLIFIED WASTELAND BG: Generic + Location Tints === */
+        body {
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            font-family: 'Roboto Mono', monospace;
+            color: #c5c5c5;
+            
+            background: 
+                radial-gradient(ellipse 100% 100% at 30% 90%, #8B4513 0%, #654321 30%, transparent 50%),
+                radial-gradient(ellipse 100% 100% at 70% 95%, #8B4513 0%, #654321 30%, transparent 50%),
+                linear-gradient(180deg, #4A4A4A 0%, #2A2A2A 50%, #1A1A1A 100%),
+                radial-gradient(circle at 50% 20%, rgba(139, 69, 19, 0.3) 0%, transparent 70%);
+            background-size: 200% 200%, 150% 150%, cover, 300% 300%;
+            background-position: center bottom, center bottom, center, center;
+            background-repeat: no-repeat;
+            transition: filter 0.8s ease; 
+        }
+
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 10% 10%, rgba(139, 69, 19, 0.4) 0%, transparent 100%);
+            z-index: -1;
+            animation: haze-shift 60s linear infinite;
+        }
+        @keyframes haze-shift {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+        }
+
+        body.location-old-settlement {
+            filter: sepia(0.6) saturate(0.8) hue-rotate(30deg);
+        }
+        body.location-irradiated-desert {
+            filter: sepia(0.8) saturate(1.4) hue-rotate(45deg);
+        }
+        body.location-ruined-city {
+            filter: saturate(1.8) hue-rotate(280deg) brightness(1.2);
+        }
+        body.location-the-wasteland {
+            filter: sepia(0.3) contrast(1.5) hue-rotate(250deg);
+        }
+        body.location-the-store {
+            filter: saturate(1.6) hue-rotate(120deg) brightness(1.3);
+        }
+        
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            height: 5px;
+            background: #4a5568;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+            border-radius: 3px;
+        }
+        #volume-slider:hover {
+            opacity: 1;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #c026d3;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        #volume-slider::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #c026d3;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        #game-log {
+            min-height: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #c026d3 #1a1a1a;
+        }
+        #game-log::-webkit-scrollbar { width: 8px; }
+        #game-log::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 4px; }
+        #game-log::-webkit-scrollbar-thumb { background: #c026d3; border-radius: 4px; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-6 rounded-lg shadow-lg game-container">
+
+        <header class="text-center mb-6 border-b-2 border-dashed border-fuchsia-700/50 pb-4 relative">
+            <h1 class="text-4xl md:text-5xl text-fuchsia-500 font-title">Wasteland Survivor</h1>
+            <div class="absolute top-0 left-0 px-3 py-1 text-sm bg-fuchsia-900/50 rounded-br-lg">
+                <span id="current-location-display">Old Settlement</span>
+            </div>
+            <p class="text-gray-400">Day: <span id="day-counter">1</span> | <span id="goal-text">The goal is survival. Find the bunker.</span></p>
+            
+            <div class="w-full h-2 bg-gray-800 rounded-full mt-2 overflow-hidden" data-tooltip="Actions until next day">
+                <div id="day-progress" class="h-full bg-fuchsia-600 transition-all duration-500" style="width: 0%"></div>
+            </div>
+
+            <div class="absolute top-0 right-0 flex flex-col items-end p-1">
+                <button id="reset-button" class="px-3 py-1 text-sm rounded-lg btn btn-danger">
+                    Reset Game
+                </button>
+                
+                <div class="text-xs text-gray-400 mt-2 flex items-center space-x-2">
+                    <label for="volume-slider">Vol:</label>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1">
+                    <button id="help-button" class="btn btn-action rounded-full w-6 h-6 text-xs leading-none" aria-label="Show Tutorial">?</button>
+                </div>
+            </div>
+        </header>
+
+        <main role="main" aria-label="Game interface" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="md:col-span-1 bg-black/30 p-4 rounded-lg">
+                <h2 class="text-2xl text-fuchsia-400 mb-4">Survivor</h2>
+                <div id="player-stats">
+                    </div>
+
+                <h3 class="text-2xl text-fuchsia-400 mt-6 mb-2">Equipment</h3>
+                <div id="player-equipment">
+                    </div>
+
+                <h3 class="text-2xl text-fuchsia-400 mt-6 mb-2">Inventory</h3>
+                <div id="player-inventory" class="text-sm space-y-1 max-h-32 overflow-y-auto">
+                    </div>
+
+                <h3 class="text-2xl text-fuchsia-400 mt-6 mb-2">Status Effects</h3>
+                <div id="player-status-effects" class="text-sm space-y-1">
+                    </div>
+
+                <h3 id="achievements-button" class="text-2xl text-fuchsia-400 mt-6 mb-2 cursor-pointer hover:text-fuchsia-300 transition-colors" data-tooltip="Click to view achievements">
+                    Achievements
+                </h3>
+                <div id="achievements" class="text-xs text-gray-500 mt-2">
+                    Unlocked: <span id="ach-count">0</span> / ∞
+                </div>
+            </div>
+
+            <div class="md:col-span-2 space-y-6">
+                <div class="bg-black/30 p-4 rounded-lg">
+                    <h2 class="text-2xl text-fuchsia-400 mb-2">Current Location</h2>
+                    <p id="location-info"></p>
+                </div>
+                <div id="log-container" class="flex flex-col h-96 bg-gray-900 bg-opacity-90 backdrop-blur-sm shadow-2xl border border-fuchsia-900 rounded-lg p-4">
+                  <h2 class="text-fuchsia-400 font-bold text-lg sticky top-0 bg-gray-900 bg-opacity-95 pb-2 -mx-4 -mt-4 px-4 pt-2 border-b border-fuchsia-800 z-10">
+                    Log
+                  </h2>
+                  <div id="game-log" class="flex-1 overflow-y-auto mt-2 space-y-1 pr-2" role="log" aria-live="polite">
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-3 mt-4">
+                <div class="bg-black/30 p-4 rounded-lg">
+                    <h2 class="text-2xl text-fuchsia-400 mb-4 text-center">Actions</h2>
+                    <div id="actions-panel" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+                        </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div id="modal-content" class="bg-[#2d2d2d] border-2 border-fuchsia-700/50 p-6 rounded-lg max-w-lg w-full shadow-lg max-h-[80vh] overflow-y-auto">
+             </div>
+    </div>
+
+    <script>
+        'use strict';
+
+        // Encapsulate everything in an IIFE to avoid global pollution
+        (function() {
+            
+            // --- GAME CONSTANTS ---
+            const GAME_CONFIG = {
+                BASE_ATTACK: 5,
+                BASE_DEFENSE: 1,
+                ENERGY_PER_HOUR_SLEEP: 10,
+                THIRST_DECAY_PER_HOUR: 2,
+                HUNGER_DECAY_PER_HOUR: 1,
+                THIRST_DAMAGE: 8,
+                HUNGER_DAMAGE: 5,
+                EXPLORE_ENERGY_COST: 20,
+                MIN_TRAVEL_ENERGY: 10, 
+                DAY_LENGTH_ACTIONS: 8,
+                SAVE_KEY: 'wasteland_survivor_save'
+            };
+
+            const EXPLORE_OUTCOMES = {
+                ITEM_CHANCE: 0.40,
+                ENEMY_CHANCE: 0.75,
+                EVENT_CHANCE: 0.90,
+                BUNKER_CHANCE: 0.08
+            };
+
+            const ITEMS = {
+                // Weapons
+                'Rusty Knife': { type: 'weapon', attack: 3, price: 15, description: 'A dull but functional blade' },
+                'Sharpened Pipe': { type: 'weapon', attack: 5, price: 35, description: 'Crude but effective' },
+                'Machete': { type: 'weapon', attack: 8, price: 75, description: 'Sharp and reliable' },
+                'Combat Shotgun': { type: 'weapon', attack: 15, price: 200, description: 'Devastating at close range' },
+                'Glitch Shiv': { type: 'weapon', attack: 6, price: 55, effect: 'bleed', description: 'Rips code from flesh. Leaves digital scars.' },
+                'Net Pulse': { type: 'weapon', attack: 10, price: 120, effect: 'ranged', description: 'Fries ICE and meat. 50% armor ignore.' },
+                'Chain Hack': { type: 'weapon', attack: 7, price: 90, effect: 'multi', description: 'Multi-target lash. Pulls in loose ends.' },
+                'Void Caster': { type: 'weapon', attack: 18, price: 300, effect: 'pierce', description: 'Erases matter. No defense survives.' },
+                'Haze Blaster': { type: 'weapon', attack: 20, price: 350, effect: 'aoe', description: 'Splash of corrupted reality. Swarms melt.' },
+                'Neural Gauntlet': { type: 'weapon', attack: 12, price: 180, effect: 'steal', description: 'Drains enemy runtime. Steals their spark.' },
+                
+                // Armor
+                'Tattered Rags': { type: 'armor', defense: 1, price: 10, description: 'Better than nothing' },
+                'Leather Jacket': { type: 'armor', defense: 3, price: 40, description: 'Decent protection' },
+                'Riot Gear': { type: 'armor', defense: 6, price: 100, description: 'Military-grade protection' },
+                'Power Armor Frame': { type: 'armor', defense: 12, price: 250, description: 'Ultimate protection' },
+                'Nano-Weave Vest': { type: 'armor', defense: 4, price: 60, effect: 'regen', description: '+2 health regen/day' },
+                'Holo-Shield': { type: 'armor', defense: 5, price: 85, effect: 'dodge', description: '20% chance evade attack' },
+                'Chem-Reactive Suit': { type: 'armor', defense: 8, price: 140, effect: 'reflect', description: 'Reflects 25% damage back' },
+                'Neon Exosuit': { type: 'armor', defense: 10, price: 220, effect: 'energy', description: '+20 max energy' },
+                'Glitch Plate': { type: 'armor', defense: 14, price: 280, effect: 'tank', description: 'Immune to DoT/bleed' },
+
+                // Consumables (Neon Set)
+                'Circuit Drip': { type: 'consumable', restores: 'thirst', amount: 25, price: 3, description: 'Recycled coolant. Tastes like rust.' },
+                'Null Hydrant': { type: 'consumable', restores: 'thirst', amount: 50, price: 8, description: 'Distilled from rain on chrome spires.' },
+                'Synth Sludge': { type: 'consumable', restores: 'hunger', amount: 30, price: 5, description: 'Corp rations. Fills the void.' },
+                'Glow Slab': { type: 'consumable', restores: 'hunger', amount: 60, price: 12, effect: 'rad', description: 'Mutant synth-meat. Power surge... with fallout.' },
+                'Mesh Patches': { type: 'consumable', restores: 'health', amount: [10, 30], price: 0, description: 'Self-sealing nano-weave. Stings like hell.', noSell: true },
+                'Byte Bar': { type: 'consumable', restores: 'hunger', amount: 45, price: 15, effect: 'energy', description: 'Compressed data turned edible. Crunchy lies.' },
+                'Glitch Vial': { type: 'consumable', restores: 'thirst', amount: 40, price: 6, effect: 'poison', description: 'Hacked chem-lab runoff. Thirst quench... mostly.' },
+                'Echo Patch': { type: 'consumable', restores: 'health', amount: [20, 40], price: 18, effect: 'overheal', description: 'Temporary firewall for flesh. Fades fast.' },
+                'Neural Spike': { type: 'consumable', restores: 'energy', amount: 40, price: 20, effect: 'buff', description: 'Overclocks your wetware. ATK surge.' },
+                'Overload Spike': { type: 'consumable', restores: 'energy', amount: 40, price: 40, effect: 'buff_double', description: 'Double-tap your synapses. Risky fire.', noSell: true },
+                'Haze Elixir': { type: 'consumable', restores: 'all', amount: 30, price: 35, description: 'Distilled neon dreams. Partial reset.' },
+                'Overclock Tab': { type: 'consumable', restores: 'energy', amount: 60, price: 45, effect: 'overclock', description: 'Burn bright, burn out. Energy flood.' },
+                'Null Tab': { type: 'consumable', restores: 'health', amount: [40, 60], price: 30,
